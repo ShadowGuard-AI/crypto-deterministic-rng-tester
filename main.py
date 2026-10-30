@@ -1,12 +1,11 @@
 import argparse
 import logging
 import secrets
-import os
+import sys
+from collections import Counter
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.backends import default_backend
-from cryptography.exceptions import InvalidTag
-import statistics
 import math
 
 # Configure logging
@@ -75,11 +74,12 @@ def calculate_entropy(data):
     if not data:
         return 0
 
+    # Counter in one pass instead of data.count(x) for all 256 values,
+    # which rescanned the whole buffer each time for the same counts.
     entropy = 0
-    for x in range(256):
-        p_x = float(data.count(x)) / len(data)
-        if p_x > 0:
-            entropy += - p_x * math.log2(p_x)
+    for count in Counter(data).values():
+        p_x = count / len(data)
+        entropy += - p_x * math.log2(p_x)
     return entropy
 
 def run_statistical_tests(data, entropy_check):
@@ -87,13 +87,15 @@ def run_statistical_tests(data, entropy_check):
     Runs basic statistical tests on the generated data.
     """
     try:
-      # Byte frequency test
-      byte_counts = {}
-      for byte in data:
-          byte_counts[byte] = byte_counts.get(byte, 0) + 1
+      # Byte frequency test. The sum has to run over all 256 byte values,
+      # including values that never appeared: a missing value is a full
+      # average_count below expectation, and summing only over the values
+      # present silently dropped that term and understated the statistic
+      # exactly when the output was biased.
+      byte_counts = Counter(data)
 
       average_count = len(data) / 256.0
-      chi_squared = sum([(count - average_count) ** 2 / average_count for count in byte_counts.values()])
+      chi_squared = sum((byte_counts.get(value, 0) - average_count) ** 2 / average_count for value in range(256))
 
       logging.info(f"Chi-squared test: {chi_squared}")
 
@@ -115,6 +117,13 @@ def main():
     """
     args = setup_argparse()
 
+    if args.iterations <= 0 or args.output_length <= 0 or args.hkdf_length <= 0:
+        # Zero iterations used to "complete" with a chi-squared of 0 over
+        # no data, and a negative length only failed deep inside the
+        # generator and still exited 0. Reject the numbers up front.
+        logging.error("Iterations, output length and HKDF length must all be positive.")
+        sys.exit(1)
+
     logging.info(f"Testing DRNG: {args.generator}")
     logging.info(f"Output length: {args.output_length}")
     logging.info(f"Iterations: {args.iterations}")
@@ -126,6 +135,9 @@ def main():
             if args.generator == "secrets":
                 random_data = generate_secrets_output(args.output_length)
             elif args.generator == "hkdf":
+                # For HKDF the per-iteration size is --hkdf_length, not
+                # --output_length: the derive call takes its own length,
+                # and generate_hkdf_output ignores the first argument.
                 random_data = generate_hkdf_output(args.output_length, args.hkdf_salt, args.hkdf_info, args.hkdf_length)
             else:
                 logging.error("Invalid generator specified.")
@@ -136,7 +148,7 @@ def main():
                 all_data += random_data
             else:
                 logging.error("Failed to generate random data.")
-                return
+                sys.exit(1)
 
         run_statistical_tests(all_data, args.entropy_check)
         logging.info("Testing completed.")
