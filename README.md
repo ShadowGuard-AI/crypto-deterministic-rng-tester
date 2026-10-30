@@ -1,3 +1,5 @@
+![Banner](banner.png)
+
 # crypto-deterministic-rng-tester
 Tests the output of deterministic random number generators (DRNGs) used in crypto systems for statistical randomness and predictability, flagging potential biases or patterns. - Focused on Basic cryptographic operations
 
