@@ -16,8 +16,10 @@ def setup_argparse():
     Sets up the argument parser for the command-line interface.
     """
     parser = argparse.ArgumentParser(description="Tests the output of deterministic random number generators (DRNGs).")
-    parser.add_argument("--generator", type=str, default="secrets", choices=["secrets", "hkdf"],
-                        help="The DRNG to test: secrets (secrets.token_bytes) or hkdf (HKDF). Defaults to secrets.")
+    parser.add_argument("--generator", type=str, default="secrets", choices=["secrets", "hkdf", "seeded"],
+                        help="The DRNG to test: secrets (secrets.token_bytes), hkdf (HKDF with fresh random input), or seeded (HKDF with the --seed value as input keying material, a fixed salt and a fixed info string). Defaults to secrets.")
+    parser.add_argument("--seed", type=str, default="",
+                        help="Seed value for the seeded generator. Required when --generator is seeded. The seed string is used as the HKDF input keying material.")
     parser.add_argument("--output_length", type=int, default=1024,
                         help="The length of the output to generate in bytes. Defaults to 1024.")
     parser.add_argument("--iterations", type=int, default=1000,
@@ -67,6 +69,33 @@ def generate_hkdf_output(output_length, salt="", info="example_info", length=32)
         logging.error(f"Error generating HKDF output: {e}")
         return None
 
+SEEDED_SALT = b"deterministic-rng-tester-salt"
+SEEDED_INFO = b"deterministic-rng-tester-seeded"
+
+def generate_seeded_output(seed, output_length):
+    """
+    Generates bytes deterministically from a seed through HKDF.
+    The seed string is the input keying material. The salt is the
+    fixed value SEEDED_SALT and the info is the fixed value
+    SEEDED_INFO, both stated here and in the README, so the same
+    seed always produces the same output.
+    """
+    try:
+        if not seed:
+            logging.error("The seeded generator requires a --seed value.")
+            return None
+        hkdf = HKDF(
+            algorithm=hashes.SHA256(),
+            length=output_length,
+            salt=SEEDED_SALT,
+            info=SEEDED_INFO,
+            backend=default_backend()
+        )
+        return hkdf.derive(seed.encode('utf-8'))
+    except Exception as e:
+        logging.error(f"Error generating seeded output: {e}")
+        return None
+
 def calculate_entropy(data):
     """
     Calculates the Shannon entropy of the given data.
@@ -98,6 +127,13 @@ def run_statistical_tests(data, entropy_check):
       chi_squared = sum((byte_counts.get(value, 0) - average_count) ** 2 / average_count for value in range(256))
 
       logging.info(f"Chi-squared test: {chi_squared}")
+      # Critical value for 255 degrees of freedom at the 0.05
+      # significance level is 293.25 (standard chi-squared table).
+      critical_value = 293.25
+      if chi_squared <= critical_value:
+          logging.info(f"Chi-squared verdict: PASS, {chi_squared:.2f} is at or below the critical value 293.25 for 255 degrees of freedom at the 0.05 significance level.")
+      else:
+          logging.warning(f"Chi-squared verdict: BIAS WARNING, {chi_squared:.2f} exceeds the critical value 293.25 for 255 degrees of freedom at the 0.05 significance level. Potential bias detected.")
 
 
       if entropy_check:
@@ -127,6 +163,23 @@ def main():
     logging.info(f"Testing DRNG: {args.generator}")
     logging.info(f"Output length: {args.output_length}")
     logging.info(f"Iterations: {args.iterations}")
+
+    if args.generator == "seeded":
+        if not args.seed:
+            logging.error("The seeded generator requires a --seed value.")
+            sys.exit(1)
+        first = generate_seeded_output(args.seed, args.output_length)
+        second = generate_seeded_output(args.seed, args.output_length)
+        if first is None or second is None:
+            logging.error("Failed to generate seeded data.")
+            sys.exit(1)
+        if first == second:
+            logging.info("Determinism check: outputs match. The seeded generator produced identical output on two runs with the same seed.")
+        else:
+            logging.warning("Determinism check: outputs do not match. The seeded generator produced different output on two runs with the same seed.")
+        run_statistical_tests(first, args.entropy_check)
+        logging.info("Testing completed.")
+        return
 
     try:
         all_data = b""  # Collect all generated data for statistical tests
