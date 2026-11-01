@@ -139,6 +139,9 @@ def run_statistical_tests(data, entropy_check):
       if entropy_check:
           entropy = calculate_entropy(data)
           logging.info(f"Entropy: {entropy}")
+          # I use one flat floor for every generator and size. A short
+          # output cannot spread its bytes evenly enough to reach it,
+          # so small runs warn even from a sound generator.
           if entropy < 7.0:
               logging.warning("Low entropy detected. Possible bias.")
           else:
@@ -177,6 +180,9 @@ def main():
             logging.info("Determinism check: outputs match. The seeded generator produced identical output on two runs with the same seed.")
         else:
             logging.warning("Determinism check: outputs do not match. The seeded generator produced different output on two runs with the same seed.")
+        # The seeded branch tests a single output, once. The iteration
+        # count the caller passed plays no part here, so this verdict
+        # rests on output_length bytes and nothing more.
         run_statistical_tests(first, args.entropy_check)
         logging.info("Testing completed.")
         return
@@ -198,6 +204,9 @@ def main():
 
             if random_data:
                 # Accumulate all generated data
+                # I keep every iteration in memory until the end. With the
+                # defaults that is a thousand buffers, and raising either
+                # number grows this by the product of the two.
                 all_data += random_data
             else:
                 logging.error("Failed to generate random data.")
