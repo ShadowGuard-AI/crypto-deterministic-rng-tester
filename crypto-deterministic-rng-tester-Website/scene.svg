@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" role="img" aria-label="Belfry scene in three bands">
+<rect width="1200" height="300" fill="#e9e4d4"/>
+<rect x="0" y="0" width="1200" height="92" fill="#7d90b4"><animate attributeName="fill" values="#7d90b4;#2e3c5c;#2e3c5c" dur="24s" repeatCount="indefinite"/></rect>
+<g stroke="#4a4234" stroke-width="7"><line x1="60" y1="8" x2="60" y2="84"/><line x1="180" y1="8" x2="180" y2="84"/><line x1="300" y1="8" x2="300" y2="84"/><line x1="900" y1="8" x2="900" y2="84"/><line x1="1020" y1="8" x2="1020" y2="84"/><line x1="1140" y1="8" x2="1140" y2="84"/></g>
+<rect x="0" y="96" width="1200" height="112" fill="#cfc6ae"/>
+<rect x="0" y="104" width="1200" height="26" fill="#34281c"/>
+<g fill="#141216">
+<path d="M240 130 l10 44 l-10 8 l-10 -8 z"/><path d="M420 130 l10 44 l-10 8 l-10 -8 z"/><path d="M600 130 l10 44 l-10 8 l-10 -8 z"/>
+</g>
+<g fill="#141216" opacity="0"><path d="M420 130 l12 46 l-12 9 l-12 -9 z"/><animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.35;0.45;0.8;1" dur="24s" repeatCount="indefinite"/><animateMotion path="M0 0 C 60 30, 150 10, 260 -34" dur="24s" repeatCount="indefinite"/></g>
+<g fill="#141216" opacity="0"><path d="M600 130 l12 46 l-12 9 l-12 -9 z"/><animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.5;0.6;0.85;1" dur="24s" repeatCount="indefinite"/><animateMotion path="M0 0 C 80 26, 190 4, 330 -40" dur="24s" repeatCount="indefinite"/></g>
+<ellipse cx="820" cy="150" rx="52" ry="34" fill="#3a352e"/><rect x="788" y="176" width="64" height="18" fill="#3a352e"/>
+<rect x="0" y="208" width="1200" height="52" fill="#b7ac90"/>
+<polygon points="0,222 1200,208 1200,226 0,244" fill="#d8d0ba"/>
+<g fill="#8a8069"><circle cx="300" cy="230" r="2"/><circle cx="560" cy="224" r="2"/><circle cx="880" cy="220" r="2"/></g>
+<g><animateTransform attributeName="transform" type="translate" values="0 0; 2 1; 0 0" keyTimes="0;0.5;1" dur="24s" repeatCount="indefinite"/><path d="M238 176 l4 10 l-4 4 l-4 -4 z" fill="#141216"/></g>
+<rect x="0" y="260" width="1200" height="40" fill="#4a3620"/>
+<g stroke="#e8e2cc" stroke-width="3" fill="none"><ellipse cx="200" cy="282" rx="30" ry="9"/><ellipse cx="600" cy="282" rx="30" ry="9"/><ellipse cx="1000" cy="282" rx="30" ry="9"/></g>
+<g><rect x="196" y="262" width="8" height="14" fill="#c83c34"/><rect x="596" y="262" width="8" height="14" fill="#c83c34"/><rect x="996" y="262" width="8" height="14" fill="#c83c34"/></g>
+</svg>
